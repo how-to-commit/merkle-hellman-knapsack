@@ -1,4 +1,4 @@
-use crate::utils::{generate_coprime, generate_superincreasing_sequence, modinv};
+use crate::utils::{generate_coprime, generate_superincreasing_sequence, modinv, mulmod};
 use rand::{self, Rng};
 
 pub struct PublicKey {
@@ -14,7 +14,12 @@ pub struct PrivateKey {
 impl PublicKey {
     pub fn derive(k: &PrivateKey) -> PublicKey {
         PublicKey {
-            key: k.w.iter().map(|wi| (wi * k.r) % k.q).collect::<Vec<u64>>(),
+            key: k
+                .w
+                .iter()
+                .map(|wi| mulmod(*wi, k.r, k.q))
+                // .map(|wi| ((wi % k.q) * (k.r % k.q)) % k.q)
+                .collect::<Vec<u64>>(),
         }
     }
 
@@ -39,7 +44,7 @@ impl PrivateKey {
     pub fn generate(block_size: usize) -> PrivateKey {
         let mut rng = rand::rng();
         let (w, w_sum) = generate_superincreasing_sequence(block_size, &mut rng);
-        let q = w_sum + rng.random_range(1..=100);
+        let q = w_sum + rng.random_range(1..=10000);
         let r = generate_coprime(q, &mut rng);
         PrivateKey { w, q, r }
     }
@@ -76,9 +81,14 @@ pub struct KeyPair {
 
 pub fn generate_key_pair(block_size: usize) -> KeyPair {
     let k = PrivateKey::generate(block_size);
+    let p = PublicKey::derive(&k);
+
+    println!("Generated key pair:");
+    println!("  Private key: w={:?}, q={}, r={}", k.w, k.q, k.r);
+    println!("  Public key: {:?}", p.key);
 
     KeyPair {
-        public_key: PublicKey::derive(&k),
+        public_key: p,
         private_key: k,
     }
 }

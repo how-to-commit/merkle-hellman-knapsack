@@ -1,18 +1,26 @@
+use std::cmp::max;
 use std::cmp::min;
 use std::mem::swap;
 
 pub fn generate_superincreasing_sequence(n: usize, rng: &mut impl rand::Rng) -> (Vec<u64>, u64) {
+    println!("generate private key w");
+
     let mut sequence = Vec::with_capacity(n);
     let mut sum = 0u64;
 
+    let mut target_total: u64 = 500000;
+    let min_incr = 300;
+
     for _c in 0..n {
         // calculate bound before overflow
-        // let limit = u64::MAX - sum - u64::try_from(n - _c).expect("u64 >= usize");
-        let limit = 300; // instead of dynamic, we limit growth per time to 300
-
-        let next = sum + (*rng).random_range(1..limit);
+        let bound = max(target_total, min_incr);
+        let next = sum + (*rng).random_range(1..bound);
         sequence.push(next);
+
+        println!("seq next: {next}; target_left: {target_total}; sum: {sum}");
+
         sum += next;
+        target_total = target_total.saturating_sub(next);
     }
 
     (sequence, sum)
@@ -73,4 +81,8 @@ pub fn modinv(a: u64, b: u64) -> u64 {
     }
 
     ((old_s + b as i64) % b as i64) as u64
+}
+
+pub fn mulmod(a: u64, b: u64, m: u64) -> u64 {
+    ((a as u128 * b as u128) % m as u128) as u64
 }
