@@ -1,4 +1,5 @@
 mod encrypt;
+mod math;
 mod utils;
 
 fn main() {
